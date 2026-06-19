@@ -50,6 +50,7 @@
     background:radial-gradient(1200px 820px at 50% -12%, var(--bg-glow) 0%, var(--bg) 55%);
     color:var(--text);
     display:flex; align-items:center; justify-content:center;
+    align-items:safe center; justify-content:safe center;  /* never push the header off the top when the board is a touch too tall */
     min-height:100%; min-height:100dvh; height:100dvh; overflow:hidden;  /* dvh tracks the visible area as the mobile URL bar shows/hides */
     -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
     transition:background .5s ease;
@@ -1078,6 +1079,7 @@
           '<div><div class="k">Best</div><div class="v">'+bestFor(currentMode)+'</div></div>'+
         '</div>'+badge+
         '<br><button type="button" class="btn" data-action="play">Play Again</button>'+
+        '<div class="share-row"><button type="button" class="sbtn" data-action="menu">Main menu</button></div>'+
         shareBtns+
         '<p class="keys">'+MODES[currentMode].label+' · '+DIFFS[currentDiff].label+' · press <kbd>Space</kbd></p>'+
       '</div>'
