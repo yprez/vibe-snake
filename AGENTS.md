@@ -1,0 +1,27 @@
+# Vibe Snake
+
+A Snake game. All the code is in `index.html`: HTML, CSS, and JS in one IIFE. Publishing assembles a `dist/` folder (see below).
+
+> `CLAUDE.md` is a symlink to this file. Edit `AGENTS.md`.
+
+## What is where
+
+| Path | What |
+|------|------|
+| `index.html` | The entire game: markup, inline `<style>`, and the inline `<script>` IIFE (game loop, canvas rendering, audio, autopilot AI, themes, settings, persistence). |
+| `docs/` | Developer docs, start here. `architecture.md` (file map plus a subsystem-to-function index), `gameplay.md` (rules and tuning knobs), `ai.md` (autopilot algorithm), `contributing.md` (workflow and how to add a theme, power-up, or mode). |
+| `tools/build.mjs` | Assembles the publishable `dist/` from the public allowlist. |
+| `tools/og-screenshot.mjs` | Regenerates `og.png` from the running game via headless Chrome. |
+| `tools/capture-video.mjs` | Records a gameplay clip (`vibe-snake.mp4`) via headless Chrome and ffmpeg. |
+| `tools/ai-sim.mjs` | Benchmarks the autopilot over many simulated games (extracts the live `ai*` functions, no browser). |
+| `og.png` | Social and link-preview image (referenced by the Open Graph tags). |
+| `README.md` | Public readme: features, controls, deploy. |
+| `.github/workflows/pages.yml` | Builds `dist/` and deploys it to GitHub Pages on push to `main`. |
+
+## Working on it
+
+- To run it: open `index.html` in a browser, or serve with `python3 -m http.server`.
+- Publishing: `node tools/build.mjs` writes `dist/`, the only thing deployed. Files outside the allowlist (this file, `docs/`, `tools/`, `.claude/`) are not served on the web.
+- Before adding a theme, power-up, or mode, read `docs/contributing.md` (it also has the no-browser validation steps).
+- Commits carry no AI attribution (set in `.claude/settings.json`).
+- Prose style: no em dashes, active voice, concrete features over adjectives.

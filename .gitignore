@@ -1,0 +1,18 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+.cache/
+
+# Generated media (promo clips)
+*.mp4
+*.webm
+
+# Publish output (assembled by tools/build.mjs, deployed by CI)
+/dist/
