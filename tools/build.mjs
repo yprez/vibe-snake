@@ -18,6 +18,11 @@ const DIST = path.join(ROOT, "dist");
 const PUBLIC = [
   { file: "index.html", required: true },
   { file: "og.png", required: true },
+  { file: "manifest.webmanifest", required: false },
+  { file: "sw.js", required: false },
+  { file: "icon-192.png", required: false },
+  { file: "icon-512.png", required: false },
+  { file: "apple-touch-icon.png", required: false },
   { file: ".nojekyll", required: false },
   { file: "robots.txt", required: false },
   { file: "CNAME", required: false },   // custom domain, copied through if you add one

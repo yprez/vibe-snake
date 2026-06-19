@@ -29,6 +29,12 @@
 <meta property="og:site_name" content="Vibe Snake" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="canonical" href="https://yprez.github.io/vibe-snake/" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Vibe Snake" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230b1120'/><circle cx='22' cy='38' r='7' fill='%236ee7b7'/><circle cx='34' cy='32' r='7' fill='%2310b981'/><circle cx='45' cy='24' r='5' fill='%23fb7185'/></svg>" />
 <title>Vibe Snake: modern Snake with power-ups, themes, and an AI</title>
 <script type="application/ld+json">
@@ -1329,6 +1335,9 @@
   showStart();
   startMusicEngine();
   requestAnimationFrame(loop);
+
+  // Register the service worker for offline play and installability (PWA).
+  if ("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
 })();
 </script>
 </body>
