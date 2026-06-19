@@ -1308,8 +1308,10 @@
   });
 
   setInterval(updatePauseIcon, 120);
-  document.addEventListener("visibilitychange", function(){ if (document.hidden && state==="playing") togglePause(); });
-  window.addEventListener("blur", function(){ if (state==="playing") togglePause(); });
+  // Auto-pause on losing focus, but not while the autopilot is driving (you are
+  // spectating, and the AI will not crash from neglect).
+  document.addEventListener("visibilitychange", function(){ if (document.hidden && state==="playing" && !prefs.autopilot) togglePause(); });
+  window.addEventListener("blur", function(){ if (state==="playing" && !prefs.autopilot) togglePause(); });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function(){ setTimeout(resize, 150); });
 
