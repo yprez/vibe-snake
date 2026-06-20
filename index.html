@@ -372,7 +372,7 @@
   var currentMode = "classic", currentDiff = "medium";
 
   // ---------- Prefs / persistence ----------
-  var prefs = { sound:true, music:true, crt:false, tilt:true, autopilot:false, shake:true, colorblind:false, theme:"neon" };
+  var prefs = { sound:true, music:true, crt:false, tilt:true, autopilot:false, shake:true, colorblind:false, fullscreen:true, theme:"neon" };
   var bests = {};
   function loadPrefs(){
     try{
@@ -384,6 +384,7 @@
       if (typeof p.autopilot==="boolean") prefs.autopilot=p.autopilot;
       if (typeof p.shake==="boolean") prefs.shake=p.shake;
       if (typeof p.colorblind==="boolean") prefs.colorblind=p.colorblind;
+      if (typeof p.fullscreen==="boolean") prefs.fullscreen=p.fullscreen;
       if (p.theme && THEMES[p.theme]) prefs.theme=p.theme;
       var b = JSON.parse(localStorage.getItem("vibesnake.bests")||"{}");
       if (b && typeof b==="object") bests=b;
@@ -524,6 +525,7 @@
   }
   function start(){
     demo=false;
+    if (prefs.fullscreen) goFullscreen();
     currentMode=selectedMode; currentDiff=selectedDiff;
     try{ localStorage.setItem("vibesnake.mode", currentMode); localStorage.setItem("vibesnake.diff", currentDiff); }catch(e){}
     resetGame();
@@ -1219,12 +1221,16 @@
   function toggleTilt(){ prefs.tilt=!prefs.tilt; savePrefs(); syncSettings(); if (!prefs.tilt) boardWrap.style.transform=""; }
   function toggleShake(){ prefs.shake=!prefs.shake; savePrefs(); syncSettings(); if (!prefs.shake) shake=0; }
   function toggleColorblind(){ prefs.colorblind=!prefs.colorblind; savePrefs(); syncSettings(); render(1, perfNow()); }
+  function isFullscreen(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function goFullscreen(){ try{ if (isFullscreen()) return; var el=document.documentElement, fn=el.requestFullscreen||el.webkitRequestFullscreen; if (fn){ var p=fn.call(el); if (p&&p.catch) p.catch(function(){}); } }catch(e){} }
+  function leaveFullscreen(){ try{ if (!isFullscreen()) return; var fn=document.exitFullscreen||document.webkitExitFullscreen; if (fn) fn.call(document); }catch(e){} }
+  function toggleFullscreen(){ prefs.fullscreen=!prefs.fullscreen; savePrefs(); syncSettings(); if (prefs.fullscreen) goFullscreen(); else leaveFullscreen(); }
   function say(msg){ if (liveEl) liveEl.textContent = msg; }
   function setAutopilot(v){ prefs.autopilot=v; savePrefs(); updateIcons(); updateModeBadge(); if (v) queue=[]; say(v?"Autopilot on":"Autopilot off"); }
   function toggleAutopilot(){ setAutopilot(!prefs.autopilot); }
   function updateModeBadge(){ if (state==="playing") modeBadge.textContent = MODES[currentMode].label+" · "+DIFFS[currentDiff].label+(prefs.autopilot?" · AUTO":""); }
   function resetPrefs(){
-    prefs = { sound:true, music:true, crt:false, tilt:true, autopilot:false, shake:true, colorblind:false, theme:"neon" };
+    prefs = { sound:true, music:true, crt:false, tilt:true, autopilot:false, shake:true, colorblind:false, fullscreen:true, theme:"neon" };
     savePrefs();
     document.body.classList.toggle("crt-on", prefs.crt);
     applyTheme(prefs.theme);
@@ -1234,6 +1240,7 @@
 
   // ---------- Settings sheet ----------
   var SETTINGS = [
+    { key:"fullscreen", label:"Fullscreen" },
     { key:"sound", label:"Sound effects" }, { key:"music", label:"Music" },
     { key:"crt", label:"CRT scanlines" }, { key:"tilt", label:"Board tilt" },
     { key:"shake", label:"Screen shake" }, { key:"colorblind", label:"Colourblind palette" }
@@ -1241,6 +1248,7 @@
   function applyToggle(key){
     if (key==="sound") toggleSound(); else if (key==="music") toggleMusic(); else if (key==="crt") toggleCRT();
     else if (key==="tilt") toggleTilt(); else if (key==="shake") toggleShake(); else if (key==="colorblind") toggleColorblind();
+    else if (key==="fullscreen") toggleFullscreen();
   }
   function renderSettings(){
     var html='<div class="panel"><h2>Settings</h2><div class="settings-list">';
@@ -1324,6 +1332,16 @@
   window.addEventListener("blur", function(){ if (state==="playing" && !prefs.autopilot) togglePause(); });
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function(){ setTimeout(resize, 150); });
+
+  // Fullscreen for the whole game (intro + play). Enter on the first user gesture
+  // (the page can't request it without one) and on Play; keep it across the menu.
+  // Leaving fullscreen mid-game pauses, since the browser steals Esc to exit it.
+  function onFsChange(){ resize(); if (state==="ready") demoReset(); else if (!isFullscreen() && state==="playing" && !prefs.autopilot) togglePause(); }
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("webkitfullscreenchange", onFsChange);
+  function firstGestureFs(){ if (prefs.fullscreen) goFullscreen(); window.removeEventListener("pointerdown", firstGestureFs, true); window.removeEventListener("keydown", firstGestureFs, true); }
+  window.addEventListener("pointerdown", firstGestureFs, true);
+  window.addEventListener("keydown", firstGestureFs, true);
 
   // ---------- Boot ----------
   loadPrefs();
