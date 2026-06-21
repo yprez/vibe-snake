@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Record a smooth, in-sync gameplay clip of the game playing itself -> vibe-snake.mp4.
 //
-//   node tools/capture-video.mjs [difficulty] [seconds] [fps] [mode]
-//   e.g.  node tools/capture-video.mjs insane 120 25 maze
+//   node tools/capture-video.mjs [difficulty] [seconds] [fps] [mode] [format]
+//   e.g.  node tools/capture-video.mjs insane 120 25 maze         -> 1200x620 landscape card
+//         node tools/capture-video.mjs insane 90 30 maze reel     -> 1080x1920 vertical reel
 //
 // ONE real-time run captures both the video (CDP screencast) and the live
 // generative audio (PulseAudio), so the sound always matches the picture. The
@@ -25,7 +26,6 @@ import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const PAGE = "file://" + path.join(ROOT, "index.html");
-const OUT = path.join(ROOT, "vibe-snake.mp4");
 const RAW = "/tmp/vibe-frames";                 // captured screencast frames
 const SEQ = "/tmp/vibe-seq";                    // resampled constant-fps frames
 const PORT = 9226, SINK = "vibecap", SEED = 23;
@@ -33,7 +33,11 @@ const DIFF = process.argv[2] || "insane";       // easy | medium | hard | insane
 const SECONDS = Math.max(3, Number(process.argv[3]) || 30);
 const FPS = Math.min(60, Math.max(20, Number(process.argv[4]) || 30));
 const MODE = ["classic", "wrap", "maze"].includes(process.argv[5]) ? process.argv[5] : "classic";
-const W = 1200, WIN_H = 760, CROP_H = 620;      // window 1200x760; card crops to 1200x620
+const FORMAT = process.argv[6] === "reel" ? "reel" : "card";   // card: 1200x620 landscape | reel: 1080x1920 (9:16)
+const REEL = FORMAT === "reel";
+const W = REEL ? 540 : 1200, WIN_H = REEL ? 1040 : 760, CROP_H = REEL ? 1920 : 620;  // reel renders a small 9:16 board, upscaled to 1080x1920 in ffmpeg
+const REEL_SPEED = 2;                            // reel: run the game clock this much faster ("way faster"), audio stays in tune (Web Audio uses its own clock)
+const OUT = path.join(ROOT, REEL ? "vibe-snake-reel.mp4" : "vibe-snake.mp4");
 const DEATH_TAIL = 0.5;                          // seconds kept after a crash, then stop
 
 const have = (b) => spawnSync("sh", ["-c", `command -v ${b}`]).status === 0;
@@ -90,15 +94,23 @@ try {
   await send("Page.enable"); await send("Runtime.enable");
   // Freeze RNG + difficulty before any page script runs (keeps runs comparable).
   await send("Page.addScriptToEvaluateOnNewDocument", { source:
-    `(function(){try{localStorage.setItem('vibesnake.diff',${JSON.stringify(DIFF)});localStorage.setItem('vibesnake.mode',${JSON.stringify(MODE)});}catch(e){}` +
-    `var s=(${SEED}>>>0)||1;Math.random=function(){s=(s+0x6D2B79F5)|0;var t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};})();` });
+    `(function(){try{localStorage.setItem('vibesnake.diff',${JSON.stringify(DIFF)});localStorage.setItem('vibesnake.mode',${JSON.stringify(MODE)});` +
+    (REEL ? `localStorage.setItem('vibesnake.zoom','large');` : ``) +
+    `}catch(e){}` +
+    `var s=(${SEED}>>>0)||1;Math.random=function(){s=(s+0x6D2B79F5)|0;var t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};` +
+    (REEL ? `var rn=performance.now.bind(performance),T0=rn();var sc=function(x){return T0+(x-T0)*${REEL_SPEED};};performance.now=function(){return sc(rn());};var raf=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=function(cb){return raf(function(ts){cb(sc(ts));});};` : ``) +
+    `})();` });
   await send("Page.navigate", { url: PAGE });
   await sleep(1300);
 
   const press = (k) => send("Runtime.evaluate", { expression: `window.dispatchEvent(new KeyboardEvent('keydown',{key:${JSON.stringify(k)}}))` });
   await press(" "); await press("i");            // start + autopilot
   await send("Runtime.evaluate", { expression:
-    "(function(){var s=document.createElement('style');s.textContent='*,*::before,*::after{animation:none!important}html,body{background:#0a0e16!important}body{justify-content:flex-start!important}.app{gap:8px!important;padding-top:8px!important}.dpad,footer{display:none!important}';document.head.appendChild(s);})()" });
+    "(function(){var s=document.createElement('style');s.textContent=" + JSON.stringify(
+      REEL
+        ? "*,*::before,*::after{animation:none!important}.dpad{display:none!important}"
+        : "*,*::before,*::after{animation:none!important}html,body{background:#0a0e16!important}body{justify-content:flex-start!important}.app{gap:8px!important;padding-top:8px!important}.dpad,footer{display:none!important}"
+    ) + ";document.head.appendChild(s);})()" });
   await sleep(250);
 
   if (withAudio) audioProc = spawn("ffmpeg", ["-y", "-f", "pulse", "-i", SINK + ".monitor", "-t", String(SECONDS + 1), "-ac", "2", "-ar", "44100", `${RAW}/audio.wav`], { stdio: "ignore" });
@@ -130,7 +142,10 @@ try {
   }
 
   const video = "/tmp/vibe-video.mp4", wav = `${RAW}/audio.wav`;
-  run("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", `${SEQ}/o%06d.jpg`, "-vf", `crop=${W}:${CROP_H}:0:0`, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "medium", video]);
+  // Reel: cover-scale to an exact 1080x1920 (the headless viewport runs a touch
+  // shorter than the window). Card: crop the card height from the top of the window.
+  const vf = REEL ? "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:0:0" : `crop=${W}:${CROP_H}:0:0`;
+  run("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", `${SEQ}/o%06d.jpg`, "-vf", vf, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "medium", video]);
   const sound = withAudio && existsSync(wav) && statSync(wav).size > 40000 && audioHasSignal(wav);
   if (sound) run("ffmpeg", ["-y", "-loglevel", "error", "-i", video, "-i", wav, "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart", OUT]);
   else run("ffmpeg", ["-y", "-loglevel", "error", "-i", video, "-movflags", "+faststart", "-c", "copy", OUT]);
