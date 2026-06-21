@@ -63,25 +63,18 @@ For a one-off math check of some other piece, a throwaway `.mjs` in `/tmp` is st
 2. Add it to `modeOpts` in `showStart`.
 3. If it needs obstacles or special movement, extend `buildObstacles` and the wall/wrap branch in `tick`. The AI already reads `MODES[currentMode].wrap` and `obstacles`, so it adapts for free.
 
-## Social preview image
+## Promo media
 
-`og.png` (the link-preview image referenced by the Open Graph tags) is a real screenshot of the running game. Regenerate it after notable UI changes:
+The social preview image (`og.png`) and the social/reel videos are produced by the
+promo tooling, which lives in a separate private repo
+(`og-screenshot.mjs` and `capture-video.mjs`). Those tools drive this `index.html` in
+headless Chrome; point them at a different checkout with the `VIBE_SNAKE_DIR` env var.
+`og.png` is committed here because it ships with the site; the videos are not.
 
-```bash
-node tools/og-screenshot.mjs
-```
-
-It drives `index.html` in headless Chrome over the DevTools Protocol (Node's built-in `fetch` + `WebSocket`, no npm deps), starts a game with the autopilot so the board is lively, and captures the 1200x630 viewport. Requires `google-chrome` on PATH and Node 22+.
-
-## Gameplay clip
-
-Record a smooth MP4 of the game playing itself (autopilot):
-
-```bash
-node tools/capture-video.mjs [difficulty] [seconds] [fps] [mode]   # e.g. insane 120 25 maze
-```
-
-One real-time run captures the video (CDP screencast) and the live generative audio (PulseAudio) together, so the sound always matches the picture. This matters because the game draws cosmetics from the same `Math.random()` stream as gameplay, so a separate audio pass would run a different number of frames and play a different game (one survives, one dies). Screencast frames arrive unevenly, so each is placed at its real timestamp and resampled to a constant fps (default 30), which removes judder without desyncing audio. If the autopilot crashes before `seconds`, the clip ends at the crash instead of freezing on the game-over screen. With no PulseAudio stack the clip is silent. Output is `vibe-snake.mp4` (gitignored; a promo asset, not repo content). Requires `google-chrome`, `ffmpeg`, and Node 22+.
+Gameplay is seeded from a dedicated RNG (`grand`), separate from the `Math.random()`
+the cosmetics use, so a run is reproducible and frame-rate independent: the capture
+tool can pin `vibesnake.seed` and slow the clock for a smoother grab without changing
+which game plays out.
 
 ## Build and deploy
 
