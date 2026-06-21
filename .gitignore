@@ -13,6 +13,8 @@ Thumbs.db
 # Generated media (promo clips)
 *.mp4
 *.webm
+# except curated promo videos kept in the repo
+!video/*.mp4
 
 # Publish output (assembled by tools/build.mjs, deployed by CI)
 /dist/
