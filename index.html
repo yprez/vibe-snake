@@ -272,6 +272,13 @@
     hard:   { label:"Hard",   base:96,  min:66 },
     insane: { label:"Insane", base:72,  min:50 }   // fastest: faster start and a lower floor
   };
+  // Screen size sets the target cell size in CSS px, independent of difficulty.
+  // Bigger cells means fewer of them: larger play elements filling the screen.
+  var ZOOMS = {
+    small:  { label:"Small",  px:20 },
+    medium: { label:"Medium", px:28 },
+    large:  { label:"Large",  px:40 }
+  };
 
   // ---------- Themes ----------
   var THEMES = {
@@ -355,7 +362,7 @@
   var cell = 24, COLS = 21, ROWS = 21, boardW = 504, boardH = 504, dpr = 1;
   var particles = [], floats = [], ripples = [], stars = [];
   var combo = { count:0, mult:1, timer:0, window:2.4 };
-  var selectedMode = "classic", selectedDiff = "medium";
+  var selectedMode = "classic", selectedDiff = "medium", selectedZoom = "medium";
   var currentMode = "classic", currentDiff = "medium";
 
   // ---------- Prefs / persistence ----------
@@ -377,6 +384,7 @@
       if (b && typeof b==="object") bests=b;
       var sm = localStorage.getItem("vibesnake.mode"); if (sm && MODES[sm]) selectedMode=sm;
       var sd = localStorage.getItem("vibesnake.diff"); if (sd && DIFFS[sd]) selectedDiff=sd;
+      var szm = localStorage.getItem("vibesnake.zoom"); if (szm && ZOOMS[szm]) selectedZoom=szm;
     }catch(e){}
   }
   function savePrefs(){ try{ localStorage.setItem("vibesnake.prefs", JSON.stringify(prefs)); }catch(e){} }
@@ -411,7 +419,7 @@
     // invisible.
     var inGame = (state==="playing" || state==="paused" || state==="dying");
     if (!inGame || !COLS){
-      var target = clamp(Math.round(Math.min(bw, bh)/26), 16, 40);
+      var target = (ZOOMS[selectedZoom] || ZOOMS.medium).px;
       COLS = clamp(Math.round(bw/target), 9, 90);
       ROWS = clamp(Math.round(bh/target), 9, 90);
     }
@@ -1021,6 +1029,7 @@
     var modeOpts=[{val:"classic",label:"Classic"},{val:"wrap",label:"Wrap"},{val:"maze",label:"Maze"}];
     var diffOpts=[{val:"easy",label:"Easy"},{val:"medium",label:"Medium"},{val:"hard",label:"Hard"},{val:"insane",label:"Insane"}];
     var themeOpts=[{val:"neon",label:"Neon"},{val:"retro",label:"Retro"},{val:"synth",label:"Synth"},{val:"mono",label:"Mono"}];
+    var zoomOpts=[{val:"small",label:"Small"},{val:"medium",label:"Medium"},{val:"large",label:"Large"}];
     updateHUD();
     showOverlay(
       '<div class="panel">'+
@@ -1028,6 +1037,7 @@
         '<p class="tag">Eat · chain combos · don\'t crash</p>'+
         '<div class="opt-row"><div class="lbl">Mode</div>'+seg("mode",selectedMode,modeOpts)+'</div>'+
         '<div class="opt-row"><div class="lbl">Difficulty</div>'+seg("diff",selectedDiff,diffOpts)+'</div>'+
+        '<div class="opt-row"><div class="lbl">Screen size</div>'+seg("zoom",selectedZoom,zoomOpts)+'</div>'+
         '<div class="opt-row"><div class="lbl">Theme</div>'+seg("theme",prefs.theme,themeOpts)+'</div>'+
         '<button type="button" class="btn" data-action="play">Play</button>'+
         '<p class="keys"><kbd>WASD</kbd> / arrows · <kbd>Space</kbd> pause · <kbd>I</kbd> AI · <a class="src" href="https://github.com/yprez/vibe-snake" target="_blank" rel="noopener noreferrer">Source</a></p>'+
@@ -1265,7 +1275,7 @@
 
   overlay.addEventListener("click", function(e){
     var set=e.target.closest("[data-set]");
-    if (set){ var key=set.getAttribute("data-set"), val=set.getAttribute("data-val"); if (key==="mode") selectedMode=val; else if (key==="diff") selectedDiff=val; else if (key==="theme") applyTheme(val); showStart(); return; }
+    if (set){ var key=set.getAttribute("data-set"), val=set.getAttribute("data-val"); if (key==="mode") selectedMode=val; else if (key==="diff") selectedDiff=val; else if (key==="theme") applyTheme(val); else if (key==="zoom"){ selectedZoom=val; try{ localStorage.setItem("vibesnake.zoom", selectedZoom); }catch(e){} resize(); demoReset(); } showStart(); return; }
     var act=e.target.closest("[data-action]"); if (!act) return;
     var a=act.getAttribute("data-action");
     if (a==="play") start(); else if (a==="resume") togglePause(); else if (a==="menu") goToMenu(); else if (a==="settings") openSettings();
