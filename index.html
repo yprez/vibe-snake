@@ -397,6 +397,18 @@
   function lerp(a,b,t){ return a+(b-a)*t; }
   function blurActive(){ try{ if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){} }
 
+  // Gameplay RNG, kept separate from Math.random (which only cosmetics use) so the
+  // simulation is deterministic regardless of frame rate. Re-seeded each game; a fixed
+  // vibesnake.seed makes a run fully reproducible (used by the promo-capture tool).
+  var _gseed = 1;
+  function grandSeed(s){ _gseed = (s>>>0) || 1; }
+  function grand(){ _gseed = (_gseed + 0x6D2B79F5)|0; var t = Math.imul(_gseed ^ (_gseed>>>15), 1|_gseed); t = (t + Math.imul(t ^ (t>>>7), 61|t)) ^ t; return ((t ^ (t>>>14))>>>0) / 4294967296; }
+  function seedGameplayRng(){
+    var s = NaN;
+    try{ var ls = localStorage.getItem("vibesnake.seed"); if (ls != null && ls !== "") s = parseInt(ls, 10); }catch(e){}
+    grandSeed(isNaN(s) ? ((Math.random()*4294967296)>>>0) : s);
+  }
+
   // ---------- Theme ----------
   function applyTheme(id){
     if (!THEMES[id]) id="neon";
@@ -472,11 +484,11 @@
     var cells=[];
     for (var x=0;x<COLS;x++) for (var y=0;y<ROWS;y++){ if (!occ[x+","+y]) cells.push({x:x,y:y}); }
     if (!cells.length) return null;
-    return cells[(Math.random()*cells.length)|0];
+    return cells[(grand()*cells.length)|0];
   }
   function placeFood(){ var c=randomEmptyCell(); if (!c){ food=null; return false; } food=c; return true; }
   function choosePower(){
-    var usable = Math.max(1, COLS*ROWS - obstacleList.length), frac = snake.length/usable, r = Math.random();
+    var usable = Math.max(1, COLS*ROWS - obstacleList.length), frac = snake.length/usable, r = grand();
     // The x2 length gem only appears while the snake is short enough that doubling
     // still fits the board. Past that it would be unavoidable death, so favour trim
     // (breathing room) and the utility gems instead.
@@ -487,6 +499,7 @@
 
   // ---------- Lifecycle ----------
   function resetGame(){
+    seedGameplayRng();
     buildObstacles(currentMode);
     var midX=Math.floor(COLS/2), midY=Math.floor(ROWS/2);
     snake=[]; for (var i=0;i<START_LEN;i++) snake.push({ x:midX-i, y:midY });
