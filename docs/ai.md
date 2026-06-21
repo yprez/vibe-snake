@@ -35,10 +35,10 @@ A **Hamiltonian cycle** (a fixed loop visiting every cell once) is the way to tr
 
 It is not used here because:
 
-- A Hamiltonian cycle needs an **even** number of cells, but the board is forced **odd by odd** (for a centered start), so none exists.
+- The board size is **not fixed**: `COLS`/`ROWS` follow the viewport and the screen-size setting, so the grid changes between sessions and on resize. A cycle would have to be rebuilt for each size, and a Hamiltonian cycle needs an even cell count, which an arbitrary board does not guarantee.
 - **Wrap** and **maze obstacles** break the clean construction.
 
-A future "perfect mode" could allow one even board dimension and run a perturbed Hamiltonian cycle for classic play, keeping the BFS AI for wrap and maze.
+A future "perfect mode" could pin an even, fixed board and run a perturbed Hamiltonian cycle for classic play, keeping the BFS AI for wrap and maze.
 
 ## Where to tune
 

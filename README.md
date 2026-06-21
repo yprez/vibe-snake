@@ -6,7 +6,7 @@ A modern take on classic Snake, with power-ups, combos, themes, generative audio
 
 ## Features
 
-- **Adaptive full-screen board.** The playfield sizes itself to your viewport: a bigger, wider grid on large monitors, taller on phones. Grid dimensions lock when a game starts, so resizing mid-play rescales instead of breaking the run.
+- **Adaptive full-screen board.** The playfield sizes itself to your viewport: a bigger, wider grid on large monitors, taller on phones. A Small/Medium/Large screen-size control scales the cells to taste. Grid dimensions lock when a game starts, so resizing mid-play rescales instead of breaking the run.
 - **Buttery-smooth movement.** The snake interpolates between steps; the head pokes forward and the tail recedes, so turns render as clean rounded corners with no jitter.
 - **Three game modes.** Classic (walls kill), Wrap (pass through edges), and Maze (interior obstacles).
 - **Four difficulties.** Easy, Medium, Hard, Insane.
@@ -31,7 +31,7 @@ A modern take on classic Snake, with power-ups, combos, themes, generative audio
 | Toggle CRT effect | `C` |
 | Toggle board tilt | `T` |
 
-Mode, difficulty, and theme are chosen on the start screen.
+Mode, difficulty, screen size, and theme are chosen on the start screen.
 
 ## Documentation
 
