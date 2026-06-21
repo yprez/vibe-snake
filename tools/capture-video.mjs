@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Record a smooth, in-sync gameplay clip of the game playing itself -> vibe-snake.mp4.
 //
-//   node tools/capture-video.mjs [difficulty] [seconds] [fps] [mode] [format]
-//   e.g.  node tools/capture-video.mjs insane 120 25 maze         -> 1200x620 landscape card
-//         node tools/capture-video.mjs insane 90 30 maze reel     -> 1080x1920 vertical reel
+//   node tools/capture-video.mjs [difficulty] [seconds] [fps] [mode] [format] [seed]
+//   e.g.  node tools/capture-video.mjs insane 120 25 maze           -> 1200x620 landscape card
+//         node tools/capture-video.mjs insane 30 30 maze reel       -> 1080x1920 vertical reel
+//         node tools/capture-video.mjs insane 30 30 maze reel 7     -> same, different RNG seed (new run)
 //
 // ONE real-time run captures both the video (CDP screencast) and the live
 // generative audio (PulseAudio), so the sound always matches the picture. The
@@ -28,17 +29,17 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const PAGE = "file://" + path.join(ROOT, "index.html");
 const RAW = "/tmp/vibe-frames";                 // captured screencast frames
 const SEQ = "/tmp/vibe-seq";                    // resampled constant-fps frames
-const PORT = 9226, SINK = "vibecap", SEED = 23;
+const PORT = 9226, SINK = "vibecap", SEED = Number(process.argv[7]) || 23;
 const DIFF = process.argv[2] || "insane";       // easy | medium | hard | insane
 const SECONDS = Math.max(3, Number(process.argv[3]) || 30);
 const FPS = Math.min(60, Math.max(20, Number(process.argv[4]) || 30));
 const MODE = ["classic", "wrap", "maze"].includes(process.argv[5]) ? process.argv[5] : "classic";
 const FORMAT = process.argv[6] === "reel" ? "reel" : "card";   // card: 1200x620 landscape | reel: 1080x1920 (9:16)
 const REEL = FORMAT === "reel";
-const W = REEL ? 540 : 1200, WIN_H = REEL ? 1040 : 760, CROP_H = REEL ? 1920 : 620;  // reel renders a small 9:16 board, upscaled to 1080x1920 in ffmpeg
-const REEL_SPEED = 2;                            // reel: run the game clock this much faster ("way faster"), audio stays in tune (Web Audio uses its own clock)
+const W = REEL ? 540 : 1200, WIN_H = REEL ? 960 : 760, CROP_H = REEL ? 1920 : 620;  // reel: exact 9:16 viewport (set via device metrics), rendered 2x to 1080x1920
+const REEL_SPEED = 1;                            // reel: game-clock multiplier (1 = real game speed); audio stays in tune (Web Audio keeps its own clock)
 const OUT = path.join(ROOT, REEL ? "vibe-snake-reel.mp4" : "vibe-snake.mp4");
-const DEATH_TAIL = 0.5;                          // seconds kept after a crash, then stop
+const DEATH_TAIL = REEL ? 1.0 : 0.5;             // seconds kept after a crash (reel waits out the death animation)
 
 const have = (b) => spawnSync("sh", ["-c", `command -v ${b}`]).status === 0;
 const run = (b, a) => { const r = spawnSync(b, a, { stdio: ["ignore", "inherit", "inherit"] }); if (r.status !== 0) throw new Error(b + " failed"); };
@@ -92,6 +93,8 @@ try {
   };
 
   await send("Page.enable"); await send("Runtime.enable");
+  // Reel: force an exact 9:16 viewport at 2x (window-size alone leaves the viewport a few % short and crops).
+  if (REEL) await send("Emulation.setDeviceMetricsOverride", { width: W, height: WIN_H, deviceScaleFactor: 2, mobile: false });
   // Freeze RNG + difficulty before any page script runs (keeps runs comparable).
   await send("Page.addScriptToEvaluateOnNewDocument", { source:
     `(function(){try{localStorage.setItem('vibesnake.diff',${JSON.stringify(DIFF)});localStorage.setItem('vibesnake.mode',${JSON.stringify(MODE)});` +
@@ -114,7 +117,7 @@ try {
   await sleep(250);
 
   if (withAudio) audioProc = spawn("ffmpeg", ["-y", "-f", "pulse", "-i", SINK + ".monitor", "-t", String(SECONDS + 1), "-ac", "2", "-ar", "44100", `${RAW}/audio.wav`], { stdio: "ignore" });
-  await send("Page.startScreencast", { format: "jpeg", quality: 92, everyNthFrame: 1, maxWidth: W, maxHeight: WIN_H });
+  await send("Page.startScreencast", { format: "jpeg", quality: 92, everyNthFrame: 1, maxWidth: REEL ? 1080 : W, maxHeight: REEL ? 1920 : WIN_H });
 
   // Run for SECONDS, but stop early (plus a short tail) if the snake crashes.
   const deadJs = "(function(){var b=document.querySelector('.board-wrap'),o=document.querySelector('.overlay');return !!((b&&b.classList.contains('dying'))||(o&&o.classList.contains('show')));})()";
