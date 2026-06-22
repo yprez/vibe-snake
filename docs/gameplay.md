@@ -22,9 +22,9 @@ Mode is chosen on the start screen. Best scores are tracked **per mode** (`bests
 
 `DIFFS` sets each tier's starting step interval and its speed floor (ms), both lower = faster: Easy 165/66, Medium 130/66, Hard 96/66, Insane 72/50. Insane is faster from the first move and keeps accelerating to a lower floor than the rest.
 
-## Screen size
+## Board size
 
-A start-screen picker, independent of difficulty. `ZOOMS` maps Small/Medium/Large to a target cell size of 20/28/40 CSS px; `resize()` then fits as many whole cells as the viewport allows (clamped 9..90 per axis). Bigger cells means fewer of them: larger play elements over a coarser grid. The choice persists in `vibesnake.zoom`.
+A start-screen picker, independent of difficulty. `BOARDS` maps Small/Medium/Large to a target cell size of 40/28/20 CSS px; `resize()` then fits as many whole cells as the viewport allows (clamped 9..90 per axis). A bigger board uses smaller cells, so more of them fit: more grid, smaller play elements. The choice persists in `vibesnake.board`.
 
 ## Speed curve
 
@@ -84,7 +84,7 @@ Colours, glow, on-board glyph, and labels are in `POWERS`. Weights are in `choos
 | CRT effect | `C` |
 | Board tilt | `T` |
 
-Sound, music, CRT, board tilt, screen shake, and the colourblind palette live in the **Settings sheet** (gear button, also reachable from the pause menu), along with a **Reset to defaults**. Autopilot and Pause are their own header buttons. Mode, difficulty, **screen size**, and theme are on the start screen.
+Sound, music, CRT, board tilt, screen shake, and the colourblind palette live in the **Settings sheet** (gear button, also reachable from the pause menu), along with a **Reset to defaults**. Autopilot and Pause are their own header buttons. Mode, difficulty, **board size**, and theme are on the start screen.
 
 ## Tuning cheat-sheet
 
@@ -93,7 +93,7 @@ Sound, music, CRT, board tilt, screen shake, and the colourblind palette live in
 | Start length | `START_LEN` |
 | Per-apple speed-up | `STEP_SPEEDUP` |
 | Difficulty start speed / floor | `DIFFS[*].base` / `DIFFS[*].min` |
-| Screen-size cell targets | `ZOOMS` |
+| Board-size cell targets | `BOARDS` |
 | How often gems appear / how long they last | `BONUS_EVERY`, `BONUS_LIFE` |
 | Per-apple growth | `FOOD_GROW` |
 | Bonus length multipliers | `LEN_MULT` (and `doTrim` for trim) |

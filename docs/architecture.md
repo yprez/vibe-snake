@@ -67,7 +67,7 @@ Two transforms wrap the scene: a random translate for **screen shake**, and a pe
 | Themes | `THEMES`, `THEME`, `applyTheme` (+ CSS variables) |
 | Power-ups | `POWERS`, `FX_KEYS`, `effects`, `choosePower`, `placeSpecial`, `bonusGrow`, `onBonus`, `doTrim`, `magnetPull` |
 | Combo | `combo`, `addCombo`, `comboGlow`, `updateComboDisplay` |
-| Sizing | `resize` (picks `COLS`/`ROWS` from the viewport and the screen-size setting between games, rescales `cell` during play); `ZOOMS`, `selectedZoom` |
+| Sizing | `resize` (picks `COLS`/`ROWS` from the viewport and the board-size setting between games, rescales `cell` during play); `BOARDS`, `selectedBoard` |
 | Lifecycle | `resetGame`, `start`, `beginEnd`, `togglePause`, `goToMenu`, `primary` |
 | Step / rules | `tick`, `onEat`, `onBonus` |
 | Geometry | `cellCenter`, `adjacent`, `headPointAt`, `buildSnakePath`, `drawSnake`, `strokePathBroken`, `drawHead` |
@@ -85,16 +85,16 @@ Two transforms wrap the scene: a random translate for **screen shake**, and a pe
 
 ## Persistence
 
-`localStorage` under the `vibesnake.*` keys: `vibesnake.prefs` (sound, music, crt, tilt, autopilot, shake, colorblind, theme), `vibesnake.bests` (best score per mode), `vibesnake.mode` / `vibesnake.diff` (last selection), and `vibesnake.zoom` (screen-size setting). An optional `vibesnake.seed`, when present, pins the gameplay RNG so a run replays identically (the promo-capture tool sets it); without it each game seeds randomly. All reads/writes are wrapped in try/catch so private-mode or storage-disabled browsers degrade gracefully.
+`localStorage` under the `vibesnake.*` keys: `vibesnake.prefs` (sound, music, crt, tilt, autopilot, shake, colorblind, theme), `vibesnake.bests` (best score per mode), `vibesnake.mode` / `vibesnake.diff` (last selection), and `vibesnake.board` (board-size setting). An optional `vibesnake.seed`, when present, pins the gameplay RNG so a run replays identically (the promo-capture tool sets it); without it each game seeds randomly. All reads/writes are wrapped in try/catch so private-mode or storage-disabled browsers degrade gracefully.
 
 ## Adaptive board
 
-`resize()` chooses the grid from the viewport. Between games it recomputes `COLS`/`ROWS` from the available width/height and a target cell size, where the **screen-size** setting (Small/Medium/Large) sets that target to about 20/28/40 CSS px per cell via `ZOOMS`; the counts are clamped to 9..90 per axis, so the grid tracks the viewport aspect. During a game it keeps the grid fixed and only rescales `cell` to fit, so resizing mid-run never breaks the snake. The buffer is square-celled (`boardW`/`boardH` = `COLS*cell` by `ROWS*cell`, times `dpr` for the backing store), and the canvas element is stretched with CSS to fill the whole board area; because `COLS`/`ROWS` follow the aspect, that stretch stays negligible. The snake starts near the middle at `floor(COLS/2)`, `floor(ROWS/2)`.
+`resize()` chooses the grid from the viewport. Between games it recomputes `COLS`/`ROWS` from the available width/height and a target cell size, where the **board-size** setting (Small/Medium/Large) sets that target to about 40/28/20 CSS px per cell via `BOARDS`; the counts are clamped to 9..90 per axis, so the grid tracks the viewport aspect. During a game it keeps the grid fixed and only rescales `cell` to fit, so resizing mid-run never breaks the snake. The buffer is square-celled (`boardW`/`boardH` = `COLS*cell` by `ROWS*cell`, times `dpr` for the backing store), and the canvas element is stretched with CSS to fill the whole board area; because `COLS`/`ROWS` follow the aspect, that stretch stays negligible. The snake starts near the middle at `floor(COLS/2)`, `floor(ROWS/2)`.
 
 ## Design decisions worth knowing
 
 - **Fixed-step logic + interpolated render.** Smooth at any framerate; the AI and rules reason in whole cells.
-- **Adaptive rectangular board.** `COLS`/`ROWS` follow the viewport and the screen-size setting rather than a fixed grid, so the playfield spans 9 to 90 cells per axis at any aspect, and the snake starts near the centre via `floor`. The board is no longer forced odd-by-odd; that loosens, but does not remove, the constraints on a Hamiltonian "perfect mode" (see [ai.md](ai.md)).
+- **Adaptive rectangular board.** `COLS`/`ROWS` follow the viewport and the board-size setting rather than a fixed grid, so the playfield spans 9 to 90 cells per axis at any aspect, and the snake starts near the centre via `floor`. The board is no longer forced odd-by-odd; that loosens, but does not remove, the constraints on a Hamiltonian "perfect mode" (see [ai.md](ai.md)).
 - **Reduced motion.** `reduceMotion` (from `prefers-reduced-motion`) disables shake, tilt, and the death animation, and trims particle counts. CSS also stops the CRT flicker and ambient drift.
 - **No strobing.** There is deliberately no full-screen flash; eat feedback is local (ripple, particles, head pulse) so rapid eating cannot create a photosensitivity hazard.
 - **Accessibility toggles.** A colourblind palette (blue snake vs amber food) and independent shake/tilt/CRT toggles live in the Settings sheet; menus are focus-trapped dialogs with an aria-live game-over announcement.
