@@ -84,7 +84,7 @@ Colours, glow, on-board glyph, and labels are in `POWERS`. Weights are in `choos
 | CRT effect | `C` |
 | Board tilt | `T` |
 
-Sound, music, CRT, board tilt, screen shake, and the colourblind palette live in the **Settings sheet** (gear button, also reachable from the pause menu), along with a **Reset to defaults**. Autopilot and Pause are their own header buttons. Mode, difficulty, **board size**, and theme are on the start screen.
+Sound, music, CRT, board tilt, screen shake, and the colourblind palette live in the **Settings sheet** (gear button, also reachable from the pause menu), along with a **Reset to defaults**. Autopilot and Pause are their own **header buttons**; on wider screens sound and music get header buttons too, kept in sync with the sheet toggles. Narrow and touch layouts trim the bar to those essentials. Mode, difficulty, **board size**, and theme are on the start screen.
 
 ## Tuning cheat-sheet
 

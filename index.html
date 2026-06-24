@@ -201,10 +201,22 @@
   .dpad button svg{ width:23px; height:23px; }
   .dpad .up{ grid-column:2; grid-row:1; } .dpad .left{ grid-column:1; grid-row:2; }
   .dpad .down{ grid-column:2; grid-row:2; } .dpad .right{ grid-column:3; grid-row:2; }
+  /* Touch: bigger tap targets and the on-screen d-pad. */
   @media (hover:none),(pointer:coarse){ .dpad{ display:grid; } body.menu-open .dpad{ display:none; } .icon-btn{ width:44px; height:44px; } .icon-btn svg{ width:21px; height:21px; } .tools{ gap:8px; } }
-  @media (max-width:520px){
-    .logo{ display:none; } .tools{ gap:6px; } .hud{ gap:12px; }
+  /* Drop the sound/music quick toggles whenever the bar is tight: on any narrow
+     screen (by width, mouse or touch), and on touch at any width (44px taps need
+     the room). Both stay in Settings; the bar keeps Autopilot, Settings, Pause. */
+  @media (max-width:620px),(hover:none),(pointer:coarse){ #soundBtn,#musicBtn{ display:none; } }
+  /* Same width is the compact cutoff: it's where five 34px buttons stop clearing
+     a centred HUD (measured ~600px). Drop the logo and lay the bar out HUD-left /
+     tools-right, so the score keeps the whole left side. */
+  @media (max-width:620px){
+    .logo{ display:none; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .hud{ min-width:0; gap:12px; }
+    .tools{ gap:6px; }
   }
+  @media (max-width:340px){ .hud .stat.best{ display:none; } }
   .keys a.src{ color:var(--emerald-light); text-decoration:none; }
   .keys a.src:hover{ text-decoration:underline; }
 </style>
@@ -220,6 +232,8 @@
         <div class="stat best"><div class="k">Best</div><div class="v" id="best">0</div></div>
       </div>
       <div class="tools">
+        <button type="button" class="icon-btn" id="soundBtn"    title="Toggle sound effects" aria-label="Sound effects" aria-pressed="true"></button>
+        <button type="button" class="icon-btn" id="musicBtn"    title="Toggle music (M)" aria-label="Music" aria-pressed="true"></button>
         <button type="button" class="icon-btn" id="aiBtn"       title="Autopilot / AI mode (I)" aria-label="Autopilot" aria-pressed="false"></button>
         <button type="button" class="icon-btn" id="settingsBtn" title="Settings" aria-label="Open settings"></button>
         <button type="button" class="icon-btn" id="pauseBtn"    title="Pause / resume (Space)" aria-label="Play"></button>
@@ -343,6 +357,7 @@
   var modeBadge = document.getElementById("modeBadge");
   var comboEl = document.getElementById("combo"), comboMultEl = document.getElementById("comboMult"), comboBarEl = document.getElementById("comboBar");
   var aiBtn = document.getElementById("aiBtn"), settingsBtn = document.getElementById("settingsBtn"), pauseBtn = document.getElementById("pauseBtn");
+  var soundBtn = document.getElementById("soundBtn"), musicBtn = document.getElementById("musicBtn");
   var settingsEl = document.getElementById("settings"), liveEl = document.getElementById("live");
   var fxChips = document.querySelectorAll("#effects .chip");
 
@@ -1206,12 +1221,14 @@
   function updateIcons(){
     aiBtn.innerHTML=I.ai; aiBtn.classList.toggle("off",!prefs.autopilot); aiBtn.setAttribute("aria-pressed", prefs.autopilot?"true":"false");
     settingsBtn.innerHTML=I.settings;
+    soundBtn.innerHTML=prefs.sound?I.soundOn:I.soundOff; soundBtn.classList.toggle("off",!prefs.sound); soundBtn.setAttribute("aria-pressed", prefs.sound?"true":"false");
+    musicBtn.innerHTML=I.music; musicBtn.classList.toggle("off",!prefs.music); musicBtn.setAttribute("aria-pressed", prefs.music?"true":"false");
   }
   function updatePauseIcon(){ var playing=state==="playing"; pauseBtn.innerHTML=playing?I.pause:I.play; pauseBtn.setAttribute("aria-label", playing?"Pause":(state==="paused"?"Resume":"Play")); }
 
   // ---------- Toggles ----------
-  function toggleSound(){ prefs.sound=!prefs.sound; savePrefs(); syncSettings(); if (prefs.sound){ resumeAudio(); tone(740,0.07,"square",0.08,0); } }
-  function toggleMusic(){ prefs.music=!prefs.music; savePrefs(); syncSettings(); if (prefs.music){ ensureAudio(); resumeAudio(); startMusicEngine(); } }
+  function toggleSound(){ prefs.sound=!prefs.sound; savePrefs(); updateIcons(); syncSettings(); if (prefs.sound){ resumeAudio(); tone(740,0.07,"square",0.08,0); } }
+  function toggleMusic(){ prefs.music=!prefs.music; savePrefs(); updateIcons(); syncSettings(); if (prefs.music){ ensureAudio(); resumeAudio(); startMusicEngine(); } }
   function toggleCRT(){ prefs.crt=!prefs.crt; savePrefs(); document.body.classList.toggle("crt-on",prefs.crt); syncSettings(); }
   function toggleTilt(){ prefs.tilt=!prefs.tilt; savePrefs(); syncSettings(); if (!prefs.tilt) boardWrap.style.transform=""; }
   function toggleShake(){ prefs.shake=!prefs.shake; savePrefs(); syncSettings(); if (!prefs.shake) shake=0; }
@@ -1310,6 +1327,8 @@
     touchStart=null;
   });
 
+  soundBtn.addEventListener("click", function(){ toggleSound(); blurActive(); });
+  musicBtn.addEventListener("click", function(){ toggleMusic(); blurActive(); });
   aiBtn.addEventListener("click", function(){ toggleAutopilot(); blurActive(); });
   settingsBtn.addEventListener("click", function(){ openSettings(); blurActive(); });
   pauseBtn.addEventListener("click", function(){ if (state==="ready"||state==="over") start(); else togglePause(); blurActive(); });

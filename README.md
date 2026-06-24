@@ -31,7 +31,7 @@ A modern take on classic Snake, with power-ups, combos, themes, generative audio
 | Toggle CRT effect | `C` |
 | Toggle board tilt | `T` |
 
-Mode, difficulty, board size, and theme are chosen on the start screen.
+Mode, difficulty, board size, and theme are chosen on the start screen. The top bar has quick buttons for autopilot, settings, and pause, plus sound and music on wider screens (narrow and touch layouts keep those in Settings).
 
 ## Documentation
 
